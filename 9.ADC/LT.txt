@@ -1,0 +1,41 @@
+- ADC: Analog Digital Convert 12-bit
+- 0 - 3.3V -> 0 - 4095
+- 0 - 1    -> 0 - 4095
+
+- ADC loai 12-bit: 0 - 4095
+- Dien ap dau vao: 0 - 3.3V
+- Co the tu gia tri ADC dau vao quy ra dien ap dau vao
+
+- Thoi gian chuyen doi (Dien ap -> ADC)
+t_CONV = Thoi gian lay mau + 12.5 chu ky
+- Ve qua trinh chuyen doi lay mau: Thoi gian lay mau
++ Cang ngan: Thi nhanh nhung de nhieu
++ Cang nhieu: Thi cham nhung se dung / chac chan hon
+
+- Cac che do hoat dong cua ADC
++ Chuyen doi don: Do 1 lan roi xong
++ Chuyen doi lien tuc: Do lien tuc nhieu lan
+=> Chi su dung cho 1 kenh
++ Che do quet: Cho phep do ADC nhieu kenh (Toi da 10 kenh PA0 - PB1)
+
++ Analog Watchdog: Flag dc set len 1 neu KQ chuyen doi < hoac > nguong set
++ Dual mode: Su dung 2 bo ADC de do song song
+	-> ADC co 3 bo ADC1, ADC2, ADC3 va do uu tien thap dan (ADC1 > ADC2 > ADC3)
+	-> Dual mode: La su dung 2 bo ADC cho qua trinh chuyen doi
+	
+- Phan biet 2 nhom kenh: Regular va Injected
++ Regular: Thong dung nhat, hay su dung nhat: 10 kenh
+-> Hang doi chuan - Bo chuyen doi chuan
+-> Tac dung: Do adc, do cac cam bien
+-> Dung chung 1 thanh ghi ket qua 16-bit ten la ADC_DR  [11 : 0]
+-> Nguy co de du lieu cao, no de bi ngat (NVIC) neu 1 kenh ADC co muu uu tien cao hon
+
++ Injected: Bo cap cao (VIP)
+-> Tac dung: Doc tin hieu khan cap theo thoi gian thuc (Real-time)
+-> Chi co 4 kenh / chu ky
+-> No co 4 thanh ghi rieng cho tung bo Injected (ADC_JDRx)
+-> Khong bi ghi de, no co the ngat ngang 1 bo Regular
+
+- Sau khi chuyen doi xong, 1 co (Flag) duoc dung len ten la
+EOC: End of Convert
+Ko dung NVIC de auto doc, ma no dung DMA
