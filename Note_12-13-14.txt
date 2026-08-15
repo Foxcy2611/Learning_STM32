@@ -1,0 +1,93 @@
+1. FLASH - BKP
+a. Khái niệm
+
+- Dung lượng: 64KB  - FLASH
+- Địa chỉ bắt đầu là: 0x0800 0000
+
+- Được quy chuẩn theo các trang (Page)
++ 1 Page: 1KB
++ FLASH sẽ có tổng là 64 Page
+
+- Quy tắc ghi FLASH
++ Đầu các page flash thường để ghi / lưu trữ chương trình chạy (main, const,...) [0, 1, 2, 3, ...]
++ Chỉ được ghi dưới dạng các nửa từ (HalfWord - uint16_t)
++ Khi xóa 1 Flash, thì chỉ được xóa 1 Page
++ Khi lưu 1 biến / data vào flash thì nên lưu vào cuối của flash là các page (58, ..., 63)
+
+- BKP (Backup Domain):
++ Nó là 1 giá trị trong RAM (mất điện mất data)
++ BKP nó khi mất điện chính (VDD - Cấp từ ST-Link) thì nó dùng nguồn điện V_BAT
+=> Không bị mất giá trị
+=> Ứng dụng thường cho các tác vụ yêu cầu reset chương trình và có 1 đối chiếu
+
+b. Quy trình ghi FLASH
++ Mở khóa
++ Xóa cờ
++ (Tùy chọn) Xóa 1 page flash cần ghi
++ Ghi - uint16 halfword
++ Khóa flash
+
+2. I2C
+- I2C là giao thức giao tiếp đồng bộ sử dụng 2 chân tín hiệu
++ SCL: Tạo xung clock
++ SDA: Gửi data giữa bên gửi và bên nhận
+
+- Sử dụng cấu trúc MASTER - SLAVE
++ 1 Master: STM32F103
++ Có nhiều Slave (max 7 cái)
+
+- Sử dụng quy tắc địa chỉ
++ Master sẽ giao tiếp vs các Slave bằng địa chỉ
++ Các Slave sẽ sử dụng địa chỉ dạng 7-bit
++ Bit còn lại (ở cuối - bit thứ 8) nó quyết định là quá trình này sẽ được ghi dữ liệu / đọc dữ liệu
+
+- Trình tự giao tiếp vs I2C
++ Ghi dữ liệu
+	+) Gửi tín hiệu bắt đầu (SDA sẽ kéo từ 1->0 trong khi SCL vẫn đang ở 1)
+	+) Gửi địa chỉ Slave kết hợp quá trình dịch bit sang trái 1 lần (addr << 1) kèm bit 0
+	Vdu: PCF8574: Địa chỉ nó là 0x27
+	0010 0111 << 1 => 0100 1110
+	+) Gửi địa chỉ thanh ghi muốn làm việc (uint8_t)
+	+) Gửi data / lệnh (uint8_t)
+	+) Gửi tín hiệu kết thúc (SDA sẽ kéo từ 0->1 trong khi SCL vẫn đang ở 1)
+
+	+) Note: Giữa các lần thực hiện, cần phải chờ FLAG được set/unset thì mới làm việc
+	+) Note: Giữa các lần làm việc, thì sau khi MASTER giao yêu cầu làm việc cho Slave, thì thằng Slave sẽ gửi 1 bit lại cho thằng MASTER tên là ACK/NACK
+
++ Đọc dữ liệu - Được phép biết trước số byte dữ liệu cần đọc 
+	+) Gửi tín hiệu bắt đầu (SDA sẽ kéo từ 1->0 trong khi SCL vẫn đang ở 1)
+	+) Gửi địa chỉ Slave kết hợp quá trình dịch bit sang trái 1 lần (addr << 1) kèm bit 0
+	+) Gửi địa chỉ thanh ghi muốn làm việc (uint8_t)
+	+) Gửi tín hiệu bắt đầu lần 2
+	+) Gửi địa chỉ Slave và dịch bit sang trái 1 lần kèm theo bit 1 (T muốn đọc)
+	+) Gửi data / lệnh (uint8_t) - Số lượng byte muốn đọc
+	+) Đọc dữ liệu
+	+) Gửi tín hiệu kết thúc (SDA sẽ kéo từ 0->1 trong khi SCL vẫn đang ở 1)
+
+
+3. SPI
+- SPI chuẩn giao tiếp đồng bộ song công toàn phần (full-duplex)
+=> Quá trình ghi và đọc dữ liệu xảy ra đồng thời
++ Tốc độ rất cao (APB2 - 72MHz)
++ Cấu trúc MASTER - SLAVE
++ Sử dụng 4 chân GPIO
+	+) MISO: Master In Slave Out: Dữ liệu truyền về từ Slave về Master
+	+) MOSI: Master Out Slave In: Dữ liệu truyền về từ Master về Slave
+	+) SCK: Xung Clock
+	+) CS/NSS: Chân quyết định giao tiếp
+
+- 4 chế độ hoạt động của SPI (SPI Mode)
+=> Dựa vào 2 giá trị CPOL (0 - 1) và CPHA (1 - 2)
+0 - 1: Thường dùng - SCK ở mức thấp, lấy mẫu cạnh lên đầu tiên
+0 - 2: SCK ở mức thấp, lấy mẫu cạnh xuống
+1 - 1: SCK mức cao, lấy mẫu cạnh xuống
+1 - 2: SCK mức cao, lấy mẫu cạnh lên
+
+- Bởi vì nó dùng cái Clock của ngoại vi APB2 (72MHz), khi cho làm clock giao tiếp, cần phải chia bớt cái clock nó đi (2 -> 256 lần <=> Clock: 281 250 Hz - 36Hz)
+
+- Quy tắc ghi byte
++ Chờ cờ TXE
++ Gửi byte
++ Chờ cờ RXNE
++ Nhận byte
+
