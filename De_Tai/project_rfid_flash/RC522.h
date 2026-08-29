@@ -1,0 +1,122 @@
+#ifndef __RC522_H
+#define __RC522_H
+
+#include "stm32f10x.h"
+#include "SPI.h"
+/* ================= SPI ================= */
+
+#define MFRC522_SPI                 SPI1
+
+#define MFRC522_SCK_PORT            GPIOA
+#define MFRC522_SCK_PIN             GPIO_Pin_5
+
+#define MFRC522_MISO_PORT           GPIOA
+#define MFRC522_MISO_PIN            GPIO_Pin_6
+
+#define MFRC522_MOSI_PORT           GPIOA
+#define MFRC522_MOSI_PIN            GPIO_Pin_7
+
+/* ================= Control Pins ================= */
+
+#define MFRC522_CS_PORT             GPIOA
+#define MFRC522_CS_PIN              GPIO_Pin_4
+
+#define MFRC522_RST_PORT            GPIOB
+#define MFRC522_RST_PIN             GPIO_Pin_0
+
+/* ================= Pin control ================= */
+
+#define MFRC522_CS_LOW()            GPIO_ResetBits(MFRC522_CS_PORT, MFRC522_CS_PIN)
+#define MFRC522_CS_HIGH()           GPIO_SetBits(MFRC522_CS_PORT, MFRC522_CS_PIN)
+
+#define MFRC522_RST_LOW()           GPIO_ResetBits(MFRC522_RST_PORT, MFRC522_RST_PIN)
+#define MFRC522_RST_HIGH()          GPIO_SetBits(MFRC522_RST_PORT, MFRC522_RST_PIN)
+
+/* ================= MFRC522 Registers ================= */
+
+/* Command and status registers */
+#define CommandReg                  0x01
+#define CommIEnReg                  0x02
+#define DivIEnReg                   0x03
+#define CommIrqReg                  0x04
+#define DivIrqReg                   0x05
+#define ErrorReg                    0x06
+#define Status1Reg                  0x07
+#define Status2Reg                  0x08
+#define FIFODataReg                 0x09
+#define FIFOLevelReg                0x0A
+#define WaterLevelReg               0x0B
+#define ControlReg                  0x0C
+#define BitFramingReg               0x0D
+#define CollReg                     0x0E
+
+/* Mode registers */
+#define ModeReg                     0x11
+#define TxModeReg                   0x12
+#define RxModeReg                   0x13
+#define TxControlReg                0x14
+#define TxASKReg                    0x15
+#define TxSelReg                    0x16
+#define RxSelReg                    0x17
+#define RxThresholdReg              0x18
+#define DemodReg                    0x19
+
+/* CRC registers */
+#define CRCResultRegH               0x21
+#define CRCResultRegL               0x22
+
+/* Timer registers */
+#define TModeReg                    0x2A
+#define TPrescalerReg               0x2B
+#define TReloadRegH                 0x2C
+#define TReloadRegL                 0x2D
+
+/* Version register */
+#define VersionReg                  0x37
+
+/* ================= MIFARE Status Codes ================= */
+#define MI_OK                       0
+#define MI_NOTAGERR                 1
+#define MI_ERR                      2
+
+/* ================= MFRC522 Commands ================= */
+#define PCD_IDLE                    0x00
+#define PCD_AUTHENT                 0x0E
+#define PCD_TRANSCEIVE              0x0C
+#define PCD_RESETPHASE              0x0F
+#define PCD_CALCCRC                 0x03
+
+/* ================= PICC Commands ================= */
+#define PICC_REQIDL                 0x26
+#define PICC_REQALL                 0x52
+#define PICC_ANTICOLL               0x93
+#define PICC_SELECTTAG              0x93
+#define PICC_AUTHENT1A              0x60
+#define PICC_AUTHENT1B              0x61
+#define PICC_READ                   0x30
+#define PICC_WRITE                  0xA0
+#define PICC_DECREMENT              0xC0
+#define PICC_INCREMENT              0xC1
+#define PICC_RESTORE                0xC2
+#define PICC_TRANSFER               0xB0
+#define PICC_HALT                   0x50
+
+/* ================= API ================= */
+void RST_Init(void);
+void MFRC522_WriteRegister(uint8_t reg, uint8_t value);
+uint8_t MFRC522_ReadRegister(uint8_t reg);
+void MFRC522_SetBitMask(uint8_t reg, uint8_t mask);
+void MFRC522_ClearBitMask(uint8_t reg, uint8_t mask);
+void MFRC522_Reset(void);
+void MFRC522_AntennaOn(void);
+void MFRC522_AntennaOff(void);
+uint8_t MFRC522_ReadVersion(void);
+
+void MFRC522_Init(void);
+uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint8_t *backData, uint16_t *backLen);
+uint8_t MFRC522_Request(uint8_t reqMode, uint8_t *TagType);
+uint8_t MFRC522_Anticoll(uint8_t *serNum);
+void MFRC522_Halt(void);
+uint8_t MFRC522_Check(uint8_t *id);
+
+#endif
